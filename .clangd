@@ -1,0 +1,9 @@
+CompileFlags:
+  Add:
+    - "-std=c++23"
+  Remove:
+    - "-std=*"
+
+Diagnostics:
+  UnusedIncludes: None
+  MissingIncludes: None

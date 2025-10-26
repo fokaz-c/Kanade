@@ -1,0 +1,6 @@
+root = true
+
+[*.{cpp,h,hpp,c}]
+indent_style = tab
+indent_size = 8
+max_line_length = 120

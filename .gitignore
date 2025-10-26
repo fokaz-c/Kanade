@@ -1,0 +1,62 @@
+# --- Build & Artifacts ---
+# Ignore build outputs and compiled binaries
+build/
+out/
+bin/
+lib/
+dist/
+
+# --- Cache ---
+# Ignore local cache files and directories
+cache/
+.cache/
+*.db
+*.sqlite
+*.sqlite3
+
+# --- User Data & State ---
+# Ignore local user data that shouldn't be committed
+playlists/
+history.json
+queue.json
+
+# --- Secrets & API Keys ---
+# CRITICAL: Never commit secrets!
+secrets.h
+credentials.json
+client_secret.json
+.env
+*.key
+*.pem
+spotify_token.json
+access_token.txt
+refresh_token.txt
+
+# --- Logs ---
+*.log
+logs/
+
+# --- IDE & LSP ---
+# VSCode
+.vscode/
+
+# CLion
+.idea/
+cmake-build-*/
+
+# CMake / LSP files
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+compile_commands.json
+_deps/
+
+# --- OS Files ---
+# macOS
+.DS_Store
+
+# Windows
+Thumbs.db
+
+#stuff
+ROADMAP
