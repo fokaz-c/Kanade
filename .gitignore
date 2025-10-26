@@ -38,6 +38,8 @@ tokens.json
 logs/
 
 # --- IDE & LSP ---
+# Zededitor
+.zed/
 # VSCode
 .vscode/
 

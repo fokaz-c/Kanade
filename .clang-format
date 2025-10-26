@@ -2,11 +2,17 @@ BasedOnStyle: LLVM
 UseTab: Always
 TabWidth: 8
 IndentWidth: 8
-ColumnLimit: 120
-BreakBeforeBraces: Linux
+ColumnLimit: 80
+BreakBeforeBraces: Custom
 BraceWrapping:
-  AfterFunction: true
-PointerAlignment: Right
-IndentCaseLabels: false
+  AfterFunction: false
+  AfterControlStatement: Never
+  AfterClass: false
+  AfterNamespace: false
+  AfterStruct: false
+  AfterEnum: false
+PointerAlignment: Left
+IndentCaseLabels: true
 AllowShortFunctionsOnASingleLine: None
 AllowShortIfStatementsOnASingleLine: Never
+AllowShortLoopsOnASingleLine: false
