@@ -31,6 +31,7 @@ client_secret.json
 spotify_token.json
 access_token.txt
 refresh_token.txt
+tokens.json
 
 # --- Logs ---
 *.log

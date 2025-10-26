@@ -1,7 +1,8 @@
 add_library(core STATIC)
 
 target_sources(core PRIVATE
-    src/playback/playback_manager.cpp
+    src/spotify/spotify_client.cpp
+    src/utils/pkce.cpp
 )
 
 target_include_directories(core PUBLIC
