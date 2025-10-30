@@ -3,14 +3,18 @@
 #include "spotify/spotify_client.h"
 #include "utils/pkce.h"
 #include <chrono>
+#include <cstdio>
+#include <filesystem>
 #include <iostream>
+#include <memory>
+#include <print>
 #include <string>
 #include <thread>
 
 std::string g_auth_code;
-bool g_login_complete = false;
+bool	    g_login_complete = false;
 
-int main(void) {
+void perform_login_flow(Core::SpotifyClient& client) {
 	std::string code_verifier = Core::Util::generate_code_verifier();
 	std::string code_challenge =
 	    Core::Util::generate_code_challenge(code_verifier);
@@ -25,7 +29,7 @@ int main(void) {
 
 	httplib::Server server;
 	server.Get("/callback", [&](const httplib::Request& req,
-				    httplib::Response& res) {
+				    httplib::Response&	    res) {
 		if (req.has_param("code")) {
 			g_auth_code = req.get_param_value("code");
 			g_login_complete = true;
@@ -65,26 +69,49 @@ int main(void) {
 	}
 
 	if (g_auth_code.empty()) {
-		std::cerr << "[ERROR] Login failed. No auth code received."
-			  << std::endl;
-		return 1;
+		throw std::runtime_error(
+		    "Login failed. No auth code received.");
 	}
 
 	std::cout << "[INFO] Login complete. Exchanging token..." << std::endl;
 
-	Core::SpotifyClient client;
 	std::string json_response = client.exchange_code_for_token(
-	    g_auth_code, code_verifier, Secret::CLIENT_ID,
-	    Secret::CLIENT_SECRET, Secret::REDIRECT_URI);
+	    g_auth_code, code_verifier, Secret::REDIRECT_URI);
 
 	if (json_response.empty()) {
-		std::cerr << "[ERROR] Failed to exchange token." << std::endl;
-		return 1;
+		throw std::runtime_error("Failed to exchange token.");
 	}
 
 	client.save_tokens(json_response);
+	std::cout << "[INFO] Tokens saved successfully." << std::endl;
+}
 
-	std::cout << "[INFO] All done. You are now authenticated." << std::endl;
+int main(void) {
+	try {
+		const std::string tokenFile = "tokens.json";
 
-	return 0;
+		auto client = std::make_unique<Core::SpotifyClient>(
+		    Secret::CLIENT_ID, Secret::CLIENT_SECRET);
+
+		if (!std::filesystem::exists(tokenFile) ||
+		    !client->has_valid_tokens()) {
+			std::cout << "[INFO] No valid tokens found. Starting "
+				     "login flow.\n";
+			perform_login_flow(*client);
+		} else {
+			std::cout
+			    << "[INFO] Found saved tokens. Skipping login.\n";
+		}
+
+		std::string playlists = client->get_my_playlists();
+		std::cout << "[INFO] All done. You are now authenticated."
+			  << std::endl;
+		std::cout << "[PLAYLISTS]: " << playlists << std::endl;
+
+		return 0;
+
+	} catch (const std::exception& e) {
+		std::cerr << "[ERROR] " << e.what() << std::endl;
+		return 1;
+	}
 }

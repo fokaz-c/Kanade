@@ -16,3 +16,5 @@ IndentCaseLabels: true
 AllowShortFunctionsOnASingleLine: None
 AllowShortIfStatementsOnASingleLine: Never
 AllowShortLoopsOnASingleLine: false
+AlignConsecutiveDeclarations: Consecutive
+AlignConsecutiveAssignments: None

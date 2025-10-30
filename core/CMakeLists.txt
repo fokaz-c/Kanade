@@ -3,6 +3,7 @@ add_library(core STATIC)
 target_sources(core PRIVATE
     src/spotify/spotify_client.cpp
     src/utils/pkce.cpp
+    src/utils/load_file.cpp
 )
 
 target_include_directories(core PUBLIC
