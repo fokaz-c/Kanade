@@ -2,7 +2,7 @@ BasedOnStyle: LLVM
 UseTab: Always
 TabWidth: 8
 IndentWidth: 8
-ColumnLimit: 80
+ColumnLimit: 100
 BreakBeforeBraces: Custom
 BraceWrapping:
   AfterFunction: false

@@ -6,17 +6,14 @@
 #include <unistd.h>
 
 namespace Core::Util {
-MappedFile::MappedFile(void* data, size_t size, int fd) noexcept
-    : data(data), size(size), fd(fd) {
+MappedFile::MappedFile(void* data, size_t size, int fd) noexcept : data(data), size(size), fd(fd) {
 }
 
-auto MappedFile::open(const char* filename)
-    -> std::expected<MappedFile, std::error_code> {
+auto MappedFile::open(const char* filename) -> std::expected<MappedFile, std::error_code> {
 
 	int fd = ::open(filename, O_RDONLY);
 	if (fd == -1) {
-		return std::unexpected(
-		    std::error_code(errno, std::system_category()));
+		return std::unexpected(std::error_code(errno, std::system_category()));
 	}
 
 	struct stat sb;
