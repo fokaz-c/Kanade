@@ -2,8 +2,43 @@
 #include <chrono>
 #include <cstdint>
 #include <string>
+#include <vector>
 
 namespace Core {
+
+struct Artist_t {
+	std::string id; // Spotify ID
+	std::string name;
+	std::string uri; // URI for the artist on spotify
+};
+
+struct AlbumCover_t {
+	std::string url;
+	uint32_t    width, height;
+};
+
+struct Album_t {
+	std::string  id;
+	std::string  name;
+	std::string  type;
+	AlbumCover_t album_cover;
+};
+
+struct Track_t {
+	std::string	      id; // Spotify ID
+	std::string	      name;
+	std::vector<Artist_t> artists;
+	Album_t		      album;
+};
+
+struct Playlist_t {
+	std::string id;
+	std::string name;
+	std::string owner;
+	bool	    collaborative;
+	std::string image_url;
+	int	    total_tracks;
+};
 
 struct token_t {
 	std::string access_token;
@@ -17,8 +52,7 @@ struct token_t {
 class SpotifyClient {
       public:
 	SpotifyClient(std::string clientID, std::string clientSecret)
-	    : m_client_id(std::move(clientID)),
-	      m_client_secret(std::move(clientSecret)),
+	    : m_client_id(std::move(clientID)), m_client_secret(std::move(clientSecret)),
 	      m_tokens_modified(false) {
 		load_tokens();
 	}
@@ -43,10 +77,9 @@ class SpotifyClient {
 			return false;
 
 		auto now = std::chrono::system_clock::now();
-		auto token_time = std::chrono::system_clock::time_point(
-		    std::chrono::seconds(m_token.timestamp));
-		auto expiry_time =
-		    token_time + std::chrono::seconds(m_token.expires_in);
+		auto token_time =
+		    std::chrono::system_clock::time_point(std::chrono::seconds(m_token.timestamp));
+		auto expiry_time = token_time + std::chrono::seconds(m_token.expires_in);
 
 		return now < expiry_time;
 	}
@@ -54,9 +87,11 @@ class SpotifyClient {
 	std::string exchange_code_for_token(const std::string& code,
 					    const std::string& code_verifier,
 					    const std::string& redirect_uri);
-	std::string get_my_playlists();
 
-	// Public API: parses JSON response and updates tokens
+	std::vector<Playlist_t> get_my_playlists();
+
+	std::vector<Track_t> get_tracks_from_playlist(const std::string& playlist);
+
 	void save_tokens(const std::string& json_response);
 
 	bool refresh_tokens();

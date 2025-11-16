@@ -13,7 +13,7 @@
 namespace Core::Util {
 
 std::string base64_url_encode(const std::vector<unsigned char>& data) {
-	BIO *bio, *b64;
+	BIO *	 bio, *b64;
 	BUF_MEM* bufferPtr;
 
 	b64 = BIO_new(BIO_f_base64());
@@ -30,8 +30,7 @@ std::string base64_url_encode(const std::vector<unsigned char>& data) {
 
 	std::replace(encoded.begin(), encoded.end(), '+', '-');
 	std::replace(encoded.begin(), encoded.end(), '/', '_');
-	encoded.erase(std::remove(encoded.begin(), encoded.end(), '='),
-		      encoded.end());
+	encoded.erase(std::remove(encoded.begin(), encoded.end(), '='), encoded.end());
 
 	return encoded;
 }
@@ -39,16 +38,15 @@ std::string base64_url_encode(const std::vector<unsigned char>& data) {
 std::string generate_code_verifier(size_t length) {
 	std::vector<unsigned char> buffer(length);
 	if (RAND_bytes(buffer.data(), length) != 1) {
-		throw std::runtime_error(
-		    "Failed to generate random bytes for PKCE verifier");
+		throw std::runtime_error("Failed to generate random bytes for PKCE verifier");
 	}
 	return base64_url_encode(buffer);
 }
 
 std::string generate_code_challenge(const std::string& verifier) {
 	std::vector<unsigned char> hash(SHA256_DIGEST_LENGTH);
-	SHA256(reinterpret_cast<const unsigned char*>(verifier.c_str()),
-	       verifier.length(), hash.data());
+	SHA256(reinterpret_cast<const unsigned char*>(verifier.c_str()), verifier.length(),
+	       hash.data());
 	return base64_url_encode(hash);
 }
 
