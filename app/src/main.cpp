@@ -20,7 +20,7 @@ void perform_login_flow(Core::SpotifyClient& client) {
 	std::string auth_url = "https://accounts.spotify.com/authorize?";
 	auth_url += "response_type=code";
 	auth_url += "&client_id=" + Secret::CLIENT_ID;
-	auth_url += "&scope=playlist-read-private";
+	auth_url += "&scope=playlist-read-private user-library-read";
 	auth_url += "&redirect_uri=" + Secret::REDIRECT_URI;
 	auth_url += "&code_challenge_method=S256";
 	auth_url += "&code_challenge=" + code_challenge;
@@ -43,19 +43,17 @@ void perform_login_flow(Core::SpotifyClient& client) {
 
 	std::thread server_thread([&]() {
 		if (!server.listen("127.0.0.1", 8888)) {
-			std::cerr << "[ERROR] Could not start server on "
-				     "127.0.0.1:8888"
-				  << std::endl;
+			std::println(stderr, "[ERROR] Could not start server on 127.0.0.1:8888");
 			g_login_complete = true;
 		}
 	});
 	server_thread.detach();
 
-	std::cout << "====================================================" << std::endl;
-	std::cout << "Please open this URL in your browser to log in:\n" << std::endl;
-	std::cout << auth_url << std::endl;
-	std::cout << "====================================================" << std::endl;
-	std::cout << "\nWaiting for login..." << std::endl;
+	std::println("====================================================");
+	std::println("Please open this URL in your browser to log in:\n");
+	std::println("{}", auth_url);
+	std::println("====================================================");
+	std::println("\nWaiting for login...");
 
 	while (!g_login_complete) {
 		std::this_thread::sleep_for(std::chrono::milliseconds(200));
@@ -65,7 +63,7 @@ void perform_login_flow(Core::SpotifyClient& client) {
 		throw std::runtime_error("Login failed. No auth code received.");
 	}
 
-	std::cout << "[INFO] Login complete. Exchanging token..." << std::endl;
+	std::println("[INFO] Login complete. Exchanging token...");
 	std::string json_response =
 	    client.exchange_code_for_token(g_auth_code, code_verifier, Secret::REDIRECT_URI);
 
@@ -74,7 +72,7 @@ void perform_login_flow(Core::SpotifyClient& client) {
 	}
 
 	client.save_tokens(json_response);
-	std::cout << "[INFO] Tokens saved successfully." << std::endl;
+	std::println("[INFO] Tokens saved successfully.");
 }
 
 int main(void) {
@@ -84,18 +82,17 @@ int main(void) {
 		    std::make_unique<Core::SpotifyClient>(Secret::CLIENT_ID, Secret::CLIENT_SECRET);
 
 		if (!std::filesystem::exists(tokenFile) || !client->has_valid_tokens()) {
-			std::cout << "[INFO] No valid tokens found. Starting "
-				     "login flow.\n";
+			std::println("[INFO] No valid tokens found. Starting login flow.");
 			perform_login_flow(*client);
 		} else {
-			std::cout << "[INFO] Found saved tokens. Skipping login.\n";
+			std::println("[INFO] Found saved tokens. Skipping login.");
 		}
 
 		// Test get_my_playlists
-		std::cout << "\n[INFO] Fetching playlists..." << std::endl;
+		std::println("\n[INFO] Fetching playlists...");
 		auto playlists = client->get_my_playlists();
 
-		std::cout << "\n===== YOUR PLAYLISTS =====" << std::endl;
+		std::println("\n===== YOUR PLAYLISTS =====");
 		for (size_t i = 0; i < playlists.size(); ++i) {
 			const auto& pl = playlists[i];
 			std::println("{}. {} (by {})", i + 1, pl.name, pl.owner);
@@ -111,12 +108,11 @@ int main(void) {
 		// Test get_tracks_from_playlist on first playlist
 		if (!playlists.empty()) {
 			const auto& first_playlist = playlists[0];
-			std::cout << "\n[INFO] Fetching tracks from: " << first_playlist.name
-				  << std::endl;
+			std::println("\n[INFO] Fetching tracks from: {}", first_playlist.name);
 
 			auto tracks = client->get_tracks_from_playlist(first_playlist.id);
 
-			std::cout << "\n===== TRACKS IN PLAYLIST =====" << std::endl;
+			std::println("\n===== TRACKS IN PLAYLIST =====");
 			for (size_t i = 0; i < tracks.size(); ++i) {
 				const auto& track = tracks[i];
 
@@ -150,10 +146,45 @@ int main(void) {
 			std::println("[INFO] Total tracks fetched: {}", tracks.size());
 		}
 
-		std::cout << "\n[INFO] All done. You are now authenticated." << std::endl;
+		// Test get_my_saved_tracks
+		std::println("\n[INFO] Fetching your saved tracks (liked songs)...");
+		auto saved_tracks = client->get_my_saved_tracks();
+
+		std::println("\n===== YOUR SAVED TRACKS =====");
+		for (size_t i = 0; i < saved_tracks.size(); ++i) {
+			const auto& track = saved_tracks[i];
+
+			// Format artists
+			std::string artists_str;
+			for (size_t j = 0; j < track.artists.size(); ++j) {
+				artists_str += track.artists[j].name;
+				if (j < track.artists.size() - 1) {
+					artists_str += ", ";
+				}
+			}
+
+			std::println("{}. {} - {}", i + 1, artists_str, track.name);
+			std::println("   Album: {}", track.album.name);
+
+			// Display album cover info
+			if (!track.album.album_cover.url.empty()) {
+				std::println("   Cover URL: {}", track.album.album_cover.url);
+				if (track.album.album_cover.width > 0) {
+					std::println("   Cover Size: {}x{}",
+						     track.album.album_cover.width,
+						     track.album.album_cover.height);
+				}
+			} else {
+				std::println("   Cover: Not available");
+			}
+			std::println("");
+		}
+
+		std::println("[INFO] Total saved tracks: {}", saved_tracks.size());
+		std::println("\n[INFO] All done. You are now authenticated.");
 		return 0;
 	} catch (const std::exception& e) {
-		std::cerr << "[ERROR] " << e.what() << std::endl;
+		std::println(stderr, "[ERROR] {}", e.what());
 		return 1;
 	}
 }

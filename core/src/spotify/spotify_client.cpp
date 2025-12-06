@@ -1,9 +1,9 @@
+#include "spotify/spotify_client.h"
 #include "cpr/api.h"
 #include "cpr/cprtypes.h"
 #include "cpr/response.h"
 #include "nlohmann/json.hpp"
 #include "nlohmann/json_fwd.hpp"
-#include "spotify/spotify_client.h"
 #include "utils/load_file.h"
 #include <cpr/cpr.h>
 #include <fstream>
@@ -306,4 +306,90 @@ bool SpotifyClient::refresh_tokens() {
 	std::println("Access token refreshed successfully.");
 	return true;
 }
+
+std::vector<Track_t> SpotifyClient::get_my_saved_tracks() {
+	cpr::Header auth_header = {{"Authorization", "Bearer " + m_token.access_token}};
+
+	std::vector<Track_t> tracks;
+	const int	     limit = 50;
+	int		     offset = 0;
+	bool		     has_more = true;
+
+	std::string fields =
+	    "items(track(id,name,artists(id,name,uri),album(id,name,album_type,images))),total";
+
+	try {
+		while (has_more) {
+			std::string url = "https://api.spotify.com/v1/me/tracks"
+					  "?limit=" +
+					  std::to_string(limit) +
+					  "&offset=" + std::to_string(offset);
+
+			cpr::Response r = cpr::Get(cpr::Url{url}, auth_header);
+
+			if (r.status_code != 200) {
+				std::println(stderr, "Failed to fetch saved tracks: {}",
+					     r.status_code);
+				std::println(stderr, "Response: {}", r.text);
+				break;
+			}
+
+			nlohmann::json json_data = nlohmann::json::parse(r.text);
+
+			const auto& items = json_data["items"];
+			for (const auto& item : items) {
+				if (item["track"].is_null()) {
+					continue;
+				}
+
+				const auto& track_json = item["track"];
+				Track_t	    track;
+
+				track.id = track_json["id"];
+				track.name = track_json["name"];
+
+				for (const auto& artist_json : track_json["artists"]) {
+					Artist_t artist;
+					artist.id = artist_json["id"];
+					artist.name = artist_json["name"];
+					artist.uri = artist_json["uri"];
+					track.artists.push_back(artist);
+				}
+
+				const auto& album_json = track_json["album"];
+				track.album.id = album_json["id"];
+				track.album.name = album_json["name"];
+				track.album.type = album_json["album_type"];
+
+				if (!album_json["images"].empty()) {
+					const auto& image = album_json["images"][0];
+					track.album.album_cover.url = image["url"];
+					track.album.album_cover.width =
+					    image["width"].is_null()
+						? 0
+						: image["width"].get<uint32_t>();
+					track.album.album_cover.height =
+					    image["height"].is_null()
+						? 0
+						: image["height"].get<uint32_t>();
+				} else {
+					track.album.album_cover.url = "";
+					track.album.album_cover.width = 0;
+					track.album.album_cover.height = 0;
+				}
+
+				tracks.push_back(track);
+			}
+
+			has_more = (items.size() == limit);
+			offset += limit;
+		}
+	} catch (const nlohmann::json::exception& e) {
+		std::println(stderr, "JSON parsing error: {}", e.what());
+	}
+
+	std::println("[INFO] Total saved tracks fetched: {}", tracks.size());
+	return tracks;
+}
+
 } // namespace Core

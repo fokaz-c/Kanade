@@ -51,7 +51,7 @@ struct token_t {
 
 class SpotifyClient {
       public:
-	SpotifyClient(std::string clientID, std::string clientSecret)
+	explicit SpotifyClient(std::string clientID, std::string clientSecret)
 	    : m_client_id(std::move(clientID)), m_client_secret(std::move(clientSecret)),
 	      m_tokens_modified(false) {
 		load_tokens();
@@ -89,6 +89,8 @@ class SpotifyClient {
 					    const std::string& redirect_uri);
 
 	std::vector<Playlist_t> get_my_playlists();
+
+	std::vector<Track_t> get_my_saved_tracks();
 
 	std::vector<Track_t> get_tracks_from_playlist(const std::string& playlist);
 
